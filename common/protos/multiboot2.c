@@ -188,11 +188,23 @@ noreturn void multiboot2_load(char *config, char* cmdline) {
             case MULTIBOOT_HEADER_TAG_EFI_BS:
                 break;
 
+            case MULTIBOOT_HEADER_TAG_CONSOLE_FLAGS: {
+#if defined (UEFI)
+                // The only thing that matters from this tag is whether text-mode was marked as required;
+                // another flag is available for "supported", but that's just a hint.
+                struct multiboot_header_tag_console_flags * consoleflags = (void *)tag;
+                if (consoleflags->console_flags & MULTIBOOT_CONSOLE_FLAGS_CONSOLE_REQUIRED) {
+                    panic(true, "multiboot2: Cannot use text mode with EFI");
+                }
+#endif
+                break;
+            }
+
             case MULTIBOOT_HEADER_TAG_RELOCATABLE:
                 has_reloc_header = true;
                 break;
 
-            default: panic(true, "multiboot2: Unknown header tag type: %u\n");
+            default: panic(true, "multiboot2: Unknown header tag type: %u\n", tag->type);
         }
     }
 
